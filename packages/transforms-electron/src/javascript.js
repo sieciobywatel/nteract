@@ -7,23 +7,76 @@ type Props = {
   data: string
 };
 
-export function runCodeHere(el: HTMLElement, code: string): any {
-  // Compatibility with Jupyter/notebook JS evaluation.  Set element so
-  // the user has a handle on the context of the current output.
-  const element = el;
+// In a complete about-face, we're going to support a variety of notebook
+// extensions that are used within display data in Jupyter.
+//
+// Primary targets:
+//   * vega
+//   * d3
+
+function createSandbox(element) {
+  function pretendRequire(modules: Array<string> | string, cb?: Function) {
+    if (typeof modules === "string") {
+      // Assume CommonJS, though we'll only support specific modules
+      // For now, only error
+      const p = document.createElement("p");
+      p.textContent = "nteract does not support commonJS loading of modules";
+      element.appendChild(p);
+      return;
+    } else if (Array.isArray(modules)) {
+      // AMD
+      // cb is expecting to be called with the loaded modules
+
+      // BEGIN THE HACKS!
+      if (modules.length === 1 && typeof cb === "function") {
+        switch (modules[0]) {
+          case "nbextensions/jupyter-vega/index":
+            const vega = require("./hacks/jupyter-vega").vega(element);
+            cb(vega);
+            return;
+          case "d3":
+            cb(require("d3"));
+            return;
+          default:
+            const p = document.createElement("p");
+            p.textContent = `nteract does not support "${modules[0]}" out of the box, raise an issue if you think you could help it become a reality`;
+            element.appendChild(p);
+            return;
+        }
+      }
+
+      const p = document.createElement("p");
+      p.textContent = `whatever you or the library you were using was trying to do with require is not supported in nteract`;
+      element.appendChild(p);
+    }
+  }
+
+  function pretendDefine(cb?: Function) {
+    const p = document.createElement("p");
+    p.textContent = `nteract does not support "define" in javascript outputs`;
+    element.appendChild(p);
+    return;
+  }
 
   const sandbox = {
     // TODO: until this is inside a webview or iframe, this escape hatch
     // means we're **NOT** properly sandboxed
     element,
     document,
-
-    console: {
-      log: console.log.bind(console),
-      error: console.error.bind(console)
-    }
+    require: pretendRequire,
+    define: pretendDefine,
+    console: console
   };
 
+  return sandbox;
+}
+
+export function runCodeHere(el: HTMLElement, code: string): any {
+  // Compatibility with Jupyter/notebook JS evaluation.  Set element so
+  // the user has a handle on the context of the current output.
+  const element = el;
+
+  const sandbox = createSandbox(element);
   const ctxt = vm.createContext(sandbox);
 
   try {
@@ -49,6 +102,8 @@ class JavaScriptDisplay extends React.Component {
   props: Props;
   el: HTMLElement;
 
+  static MIMETYPE = "application/javascript";
+
   componentDidMount(): void {
     runCodeHere(this.el, this.props.data);
   }
@@ -71,7 +126,5 @@ class JavaScriptDisplay extends React.Component {
     );
   }
 }
-
-JavaScriptDisplay.MIMETYPE = "application/javascript";
 
 export default JavaScriptDisplay;

@@ -18,6 +18,8 @@ class HTMLDisplay extends React.Component {
   props: Props;
   el: HTMLElement;
 
+  static MIMETYPE = "text/html";
+
   componentDidMount(): void {
     this.el.appendChild(createFragment(this.props.data));
   }
@@ -43,7 +45,5 @@ class HTMLDisplay extends React.Component {
     );
   }
 }
-
-HTMLDisplay.MIMETYPE = "text/html";
 
 export default HTMLDisplay;
