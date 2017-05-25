@@ -10,11 +10,13 @@ type Props = {
 // In a complete about-face, we're going to support a variety of notebook
 // extensions that are used within display data in Jupyter.
 //
-// Primary targets:
+// Primary module support, since we already include them as part of our app:
 //   * vega
 //   * d3
+//   * plotly
+//   * underscore / lodash (we'll provide lodash)
 
-function createSandbox(element) {
+function createSandbox(element: HTMLElement) {
   function pretendRequire(modules: Array<string> | string, cb?: Function) {
     if (typeof modules === "string") {
       // Assume CommonJS, though we'll only support specific modules
@@ -62,7 +64,9 @@ function createSandbox(element) {
     // TODO: until this is inside a webview or iframe, this escape hatch
     // means we're **NOT** properly sandboxed
     element,
+    // HACK: Give them global access anyways
     document,
+    window,
     require: pretendRequire,
     define: pretendDefine,
     console: console
