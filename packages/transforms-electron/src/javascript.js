@@ -3,6 +3,8 @@ import React from "react";
 
 const vm = require("vm");
 
+const requirejs = require("requirejs");
+
 type Props = {
   data: string
 };
@@ -60,17 +62,18 @@ function createSandbox(element: HTMLElement) {
     return;
   }
 
-  const sandbox = {
-    // TODO: until this is inside a webview or iframe, this escape hatch
-    // means we're **NOT** properly sandboxed
-    element,
+  const sandbox = Object.assign(
+    {},
+    global,
+    {
+      // TODO: until this is inside a webview or iframe, this escape hatch
+      // means we're **NOT** properly sandboxed
+      element,
+      require: pretendRequire,
+      define: pretendDefine
+    }
     // HACK: Give them global access anyways
-    document,
-    window,
-    require: pretendRequire,
-    define: pretendDefine,
-    console: console
-  };
+  );
 
   return sandbox;
 }
