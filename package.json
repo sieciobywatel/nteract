@@ -169,7 +169,7 @@
     "react-redux": "^5.0.5",
     "react-simple-dropdown": "^3.0.0",
     "react-virtualized": "^9.7.5",
-    "redux": "^3.5.2",
+    "redux": "^3.7.0",
     "redux-logger": "^3.0.6",
     "redux-observable": "^0.14.0",
     "rxjs": "^5.4.0",
